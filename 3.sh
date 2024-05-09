@@ -1,2 +1,2 @@
-chmod +x deploy_and_withdraw.sh
-./deploy_and_withdraw.sh
+chmod +x 2.sh
+./2.sh
