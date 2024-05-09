@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NODE_COUNT=10
+NODE_COUNT=20
 BASE_PORT=1317
 WITHDRAW_ADDRESS="0xdfF37251694167f6cb95D6CdB7Fa70cb56eb62C3"
 AIOZ_NODE_URL="https://github.com/AIOZNetwork/aioz-dcdn-cli-node/files/13561211/aioznode-linux-amd64-1.1.0.tar.gz"
