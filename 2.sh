@@ -27,27 +27,3 @@ for i in $(seq 1 $NODE_COUNT); do
     screen -dmS aioznode-$i ./aioznode/aioznode start --home $NODE_DIR --priv-key-file $PRIV_KEY_FILE
 done
 
-# 创建提取奖励的脚本
-cat >withdraw_rewards.sh <<EOF
-#!/bin/bash
-for i in \$(seq 1 $NODE_COUNT); do
-    NODE_DIR=\$(pwd)/nodes/node-\$i
-    PRIV_KEY_FILE=\$NODE_DIR/privkey.json
-
-    BALANCE=\$(./aioznode/aioznode reward balance --home \$NODE_DIR | jq -r '.balance | select(.!=null) |tonumber')
-    WITHDRAWN=\$(./aioznode/aioznode reward balance --home \$NODE_DIR | jq -r '.withdraw | select(.!=null) |tonumber')
-    
-    # 已挖到的余额减去已提取的余额
-    BALANCE_REMAINING=\$((BALANCE-WITHDRAWN))
-    
-    # 提取所有剩余余额
-    if [ "\$BALANCE_REMAINING" -gt 0 ]; then
-        ./aioznode/aioznode reward withdraw --address $WITHDRAW_ADDRESS --amount \${BALANCE_REMAINING}aioz --priv-key-file \$PRIV_KEY_FILE --home \$NODE_DIR
-    fi
-done
-EOF
-
-chmod +x withdraw_rewards.sh
-
-# 设置cron定时任务，每24小时运行一次提取任务
-(crontab -l 2>/dev/null; echo "0 0 * * * $(pwd)/withdraw_rewards.sh") | crontab -
