@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NODE_COUNT=10
+NODE_COUNT=20
 LOG_FILE=withdraw_rewards.log
 BASE_PORT=1317
 WITHDRAW_ADDRESS="0xdfF37251694167f6cb95D6CdB7Fa70cb56eb62C3" # 确保替换为你的提取地址
