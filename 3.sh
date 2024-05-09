@@ -1,7 +1,7 @@
 #!/bin/bash
 
 LOG_FILE=query_balance.log
-NODE_COUNT=10
+NODE_COUNT=20
 BASE_PORT=1317
 
 echo "-----------------------" >> $LOG_FILE
