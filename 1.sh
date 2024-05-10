@@ -9,7 +9,7 @@ echo "-----------------------" >> "$LOG_FILE"
 echo "Withdraw Run at $(date)" >> "$LOG_FILE"
 
 for ((i=1; i<=NODE_COUNT; i++)); do
-    NODE_DIR="/path/to/nodes/node-$i"
+    NODE_DIR="/root/nodes/node-$i"
     PORT=$((BASE_PORT + i))
     ENDPOINT="http://127.0.0.1:$PORT"
     PRIV_KEY_FILE="$NODE_DIR/privkey.json"
