@@ -31,4 +31,9 @@ for (( i=1; i<=NODE_COUNT; i++ )); do
     screen -dmS aioznode-$i sh -c "./aioznode start --laddr tcp://0.0.0.0:$PORT --home $NODE_DIR --priv-key-file $PRIV_KEY_FILE; exec bash"
     
     echo "Node $i started on port $PORT in screen session aioznode-$i"
+    
+    # 如果不是最后一个节点，则暂停60秒（1分钟）
+    if (( i < NODE_COUNT )); then
+        sleep 60
+    fi
 done
