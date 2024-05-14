@@ -34,6 +34,6 @@ for (( i=1; i<=NODE_COUNT; i++ )); do
     
     # 如果不是最后一个节点，则暂停60秒（1分钟）
     if (( i < NODE_COUNT )); then
-        sleep 35
+        sleep 60
     fi
 done
