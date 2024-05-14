@@ -56,4 +56,9 @@ echo "Total Withdrawn Balance: $TOTAL_WITHDRAWN AIOZ" >> $LOG_FILE
 WITHDRAWN_RMB=$(echo "scale=2; $TOTAL_WITHDRAWN * 0.75 * $RMB_CONVERSION" | bc)
 echo "Withdrawn Balance Value in RMB: $WITHDRAWN_RMB RMB" >> $LOG_FILE
 
+# 换算总余额为人民币价值
+TOTAL_BALANCE_AIOZ=$(echo "$TOTAL_REMAINING + $TOTAL_WITHDRAWN" | bc)
+TOTAL_BALANCE_RMB=$(echo "scale=2; $TOTAL_BALANCE_AIOZ * 0.75 * $RMB_CONVERSION" | bc)
+echo "Total Balance Value in RMB: $TOTAL_BALANCE_RMB RMB" >> $LOG_FILE
+
 echo "All results have been logged into $LOG_FILE."
