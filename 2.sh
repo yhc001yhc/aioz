@@ -37,6 +37,6 @@ for (( i=1; i<=NODE_COUNT; i++ )); do
 
     # 每创造一个节点后暂停3分钟，除非是最后一个节点
     if [ $i -lt $NODE_COUNT ]; then
-        sleep 200
+        sleep 150
     fi
 done
