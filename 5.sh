@@ -45,11 +45,7 @@ do
     echo "$volume_path $mount_point ext4 loop,defaults 0 0" | sudo tee -a /etc/fstab
 
     # 运行容器，并设置重启策略为always
-    docker run -d --restart always \
-        -v "$mount_point:/root/.titanedge/storage" \
-        --name "titan$i" \
-        -p $((3000+i-1)):2888 \ # 映射端口范围从3000至3004
-        nezha123/titan-edge
+    container_id=$(docker run -d --restart always -v $mount_point:/root/.titanedge/storage --name "titan$i" -p $((3000+i-1)):2888 nezha123/titan-edge)
 
     echo "节点 titan$i 已经启动"
 
