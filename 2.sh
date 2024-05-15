@@ -16,7 +16,7 @@ chmod +x aioznode
 # 创建节点文件夹
 mkdir -p nodes
 
-# 为每个节点创建一个新的钱包并启动挖矿
+# 在后台为每个节点创建一个新的钱包并启动挖矿
 for (( i=1; i<=NODE_COUNT; i++ )); do
     NODE_DIR=$(pwd)/nodes/node-$i
     PRIV_KEY_FILE=$NODE_DIR/privkey.json
@@ -25,15 +25,18 @@ for (( i=1; i<=NODE_COUNT; i++ )); do
     mkdir -p $NODE_DIR
     
     # 创建新的钱包并保存私钥
-    ./aioznode keytool new --home $NODE_DIR --save-priv-key $PRIV_KEY_FILE || { echo "Failed to create wallet for node $i"; continue; }
+    if ! ./aioznode keytool new --home $NODE_DIR --save-priv-key $PRIV_KEY_FILE; then
+        echo "Failed to create wallet for node $i"
+        continue
+    fi
 
-    # 使用screen以独立会话启动每个节点
-    screen -dmS aioznode-$i sh -c "./aioznode start --laddr tcp://0.0.0.0:$PORT --home $NODE_DIR --priv-key-file $PRIV_KEY_FILE; exec bash"
+    # 使用screen以独立会话在后台启动每个节点
+    screen -dmS aioznode-$i bash -c "./aioznode start --laddr tcp://0.0.0.0:$PORT --home $NODE_DIR --priv-key-file $PRIV_KEY_FILE; exec bash"
     
     echo "Node $i started on port $PORT in screen session aioznode-$i"
-    
-    # 如果不是最后一个节点，则暂停60秒（1分钟）
-    if (( i < NODE_COUNT )); then
-        sleep 1
+
+    # 每创造一个节点后暂停3分钟，除非是最后一个节点
+    if [ $i -lt $NODE_COUNT ]; then
+        sleep 200
     fi
 done
