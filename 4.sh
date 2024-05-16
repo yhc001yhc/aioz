@@ -6,8 +6,12 @@ SCRIPT_PATH="/root/1.sh"
 # 定义日志文件路径
 LOG_PATH="/root/withdraw.log"
 
-# 每3天运行1.sh脚本的Cron作业
-THREE_DAYS_CRON_JOB="0 0 */3 * * $SCRIPT_PATH > $LOG_PATH 2>&1"
+# 定义Screen名字
+SCREEN_NAME="my_withdraw_screen"
+
+# 每2天在后台screen中运行1.sh脚本的Cron作业
+# 使用screen -dmS创建一个会话，然后使用screen -S 执行脚本
+THREE_DAYS_CRON_JOB="0 0 */2 * * /usr/bin/screen -dmS $SCREEN_NAME $SCRIPT_PATH > $LOG_PATH 2>&1"
 
 # 每天运行3.sh脚本的Cron作业
 DAILY_CRON_JOB="0 0 * * * /root/3.sh"
