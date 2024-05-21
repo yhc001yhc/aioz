@@ -41,12 +41,34 @@ sudo ./service start meson_cdn
 cd /root
 
 # 创建并配置npool专用的19GB空间
-dd if=/dev/zero of=/root/npool.img bs=1G count=19
-mkfs.ext4 /root/npool.img
-mkdir /root/my_volume_npool
-mount -o loop /root/npool.img /root/my_volume_npool
-echo '/root/npool.img /root/my_volume_npool ext4 loop 0 0' >> /etc/fstab
-# 确保npool程序将使用这个挂载点作为存储位置
+if [ "$(id -u)" != "0" ]; then
+    echo "此脚本需要以root用户权限运行。"
+    echo "请尝试使用 'sudo -i' 命令切换到root用户，然后再次运行此脚本。"
+    exit 1
+fi
+
+# 准备数据卷的值
+disk_size_gb=19 # 设置为19GB
+volume_dir="/root/my_volume_npool" # 您的 `npool` 数据卷存放目录
+volume_path="${volume_dir}/npool.img"
+
+mkdir -p "$volume_dir"
+
+# 创建19GB的映像文件
+disk_size_mb=$((disk_size_gb * 1024)) # 转换为MB
+dd if=/dev/zero of="$volume_path" bs=1M count=$disk_size_mb
+mkfs.ext4 "$volume_path"
+
+# 创建挂载点并挂载映像文件
+mount_point="/root/my_volume_npool"
+mkdir -p "$mount_point"
+mount -o loop "$volume_path" "$mount_point"
+
+# 将新的挂载添加到fstab文件，确保重启后依旧挂载
+echo "$volume_path $mount_point ext4 loop,defaults 0 0" | tee -a /etc/fstab
+
+# 输出成功信息
+echo "npool的磁盘映像已创建并挂载到 $mount_point"
 
 # 安装并运行filecoin station 和 watchtower
 docker run --name station --detach --env FIL_WALLET_ADDRESS=0xb63153ae08c1d7b4f0dee0b0df725f3a9b8cdaae ghcr.io/filecoin-station/core && sleep 40
