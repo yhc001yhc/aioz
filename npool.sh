@@ -47,7 +47,7 @@ cur_dir=$(pwd)
 Download()
 {
     echo "Start Download......"
-    if test -f "config.json"
+    if test -f "/root/my_volume_npool/config.json"
     then
         wget -c -t 5 --quiet "https://download.npool.io/linux-${arch_type}.tar.gz" && tar zxvf "linux-${arch_type}.tar.gz" && mv "linux-${arch_type}/npool" ./ && rm -rf "linux-${arch_type}" && rm -f nknd
        if test -f "wallet.json"
@@ -56,10 +56,11 @@ Download()
        else
             start_shell="${cur_dir}/npool --appkey ${app_key}"
        fi
-        work_dir="${cur_dir}"
+        work_dir="/root/my_volume_npool"
     else
         wget -c -t 5 --quiet  "https://download.npool.io/linux-${arch_type}.tar.gz" && tar zxvf "linux-${arch_type}.tar.gz"
         start_shell="${cur_dir}/linux-${arch_type}/npool --appkey ${app_key}"
+	 rm -rf "${cur_dir}/linux-${arch_type}"
         work_dir="/root/my_volume_npool"
     fi
     if [[ "$pruning_mode" == "no-pruning" ]]
