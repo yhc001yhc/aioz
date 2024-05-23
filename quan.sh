@@ -2,7 +2,7 @@
 
 # 禁用防火墙
 ufw disable
-
+cd /root
 # 更新软件源
 sudo apt update && sleep 30
 
