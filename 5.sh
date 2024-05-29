@@ -1,58 +1,58 @@
 #!/bin/bash
 
-# 检查是否以root用户运行脚本
-if [ "$(id -u)" != "0" ]; then
-    echo "此脚本需要以root用户权限运行。"
-    echo "请尝试使用 'sudo -i' 命令切换到root用户，然后再次运行此脚本。"
-    exit 1
-fi
+# 禁用防火墙
+ufw disable
 
-# 自动设置的值
-id="C3E62B98-2F0A-4C4D-8C61-DDAC5861805D" # 身份码
-container_count=5 # 节点数量
-disk_size_gb=2 # 每个节点的硬盘大小
-volume_dir="/root/docker_volumes" # 数据卷存放目录
+# 更新软件源
+sudo apt update && sleep 30
 
-apt update
+# 安装必要的软件包
+sudo apt install curl tar jq screen cron bc -y
 
-# 检查 Docker 是否已安装
-if ! command -v docker &> /dev/null
-then
-    echo "未检测到 Docker，正在安装..."
-    apt-get install docker.io -y
-else
-    echo "Docker 已安装。"
-fi
+# 安装Docker
+curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh && sleep 10
 
-# 拉取Docker镜像
-docker pull nezha123/titan-edge
+# 下载并安装apphub
+curl -o apphub-linux-amd64.tar.gz https://assets.coreservice.io/public/package/60/app-market-gaga-pro/1.0.4/app-market-gaga-pro-1_0_4.tar.gz
+tar -zxf apphub-linux-amd64.tar.gz
+rm -f apphub-linux-amd64.tar.gz
+cd ./apphub-linux-amd64
+sleep 15
+sudo ./apphub service remove
+sudo ./apphub service install
+sleep 15
+sudo ./apphub service start
+sleep 15
+./apphub status
+sleep 15
+sudo ./apps/gaganode/gaganode config set --token=ysfvrpqrolimdill2d64b4a728b7aece
+sleep 15
+./apphub restart
+cd /root
 
-# 创建映像文件存放目录
-mkdir -p "$volume_dir"
+# 下载并安装meson_cdn
+wget 'https://staticassets.meson.network/public/meson_cdn/v3.1.20/meson_cdn-linux-amd64.tar.gz'
+tar -zxf meson_cdn-linux-amd64.tar.gz
+rm -f meson_cdn-linux-amd64.tar.gz
+cd ./meson_cdn-linux-amd64
+sudo ./service install meson_cdn
+sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --cache.size=30
+sudo ./service start meson_cdn
+cd /root
 
-# 创建用户指定数量的容器
-for i in $(seq 1 $container_count)
-do
-    disk_size_mb=$((disk_size_gb * 1024))
-    volume_path="$volume_dir/volume_$i.img"
-    sudo dd if=/dev/zero of="$volume_path" bs=1M count=$disk_size_mb
-    sudo mkfs.ext4 "$volume_path"
+# 运行 Docker 容器
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0xc1cb672c32d5a33fe5b60dc2163696484707fe95 ghcr.io/filecoin-station/core
+docker run -d --name watchtower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
-    mount_point="/mnt/my_volume_$i"
-    mkdir -p "$mount_point"
-    sudo mount -o loop "$volume_path" "$mount_point"
+# 安装并运行traffmonetizer
+curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-command-installation/main/tm.sh -o tm.sh
+chmod +x tm.sh
+bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
-    echo "$volume_path $mount_point ext4 loop,defaults 0 0" | sudo tee -a /etc/fstab
+# 以screen后台运行npool安装与配置
+screen -dmS npool_install bash -c 'wget -c https://download.npool.io/npool.sh -O npool.sh && sudo chmod +x npool.sh && sudo ./npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /root/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
 
-    # 运行容器，并设置重启策略为always
-    container_id=$(docker run -d --restart always -v $mount_point:/root/.titanedge/storage --name "titan$i" -p $((3000+i-1)):2888 nezha123/titan-edge)
+# 再次禁用防火墙
+ufw disable
 
-    echo "节点 titan$i 已经启动"
-
-    sleep 30
-
-    # 绑定节点
-    docker exec -it "titan$i" bash -c "titan-edge bind --hash=$id https://api-test1.container1.titannet.io/api/v2/device/binding"
-done
-
-echo "==============================所有节点均已设置并启动==================================="
+echo "Setup complete."
