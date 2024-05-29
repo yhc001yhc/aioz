@@ -1,5 +1,5 @@
 #!/bin/bash
-
+cd /root
 # 禁用防火墙
 ufw disable
 
