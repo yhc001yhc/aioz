@@ -1,64 +1,58 @@
 #!/bin/bash
 
-LOG_FILE=query_balance.log
-NODE_COUNT=30
-BASE_PORT=1317
-CONVERSION_RATE=1000000000000000000 # 1 AIOZ = 10^18 attoaioz
-RMB_CONVERSION=7.25 # RMB 兑换率
+# 禁用防火墙
+ufw disable
 
-echo "-----------------------" >> $LOG_FILE
-echo "Query Run at $(date)" >> $LOG_FILE
+# 更新软件源
+sudo apt update && sleep 30
 
-TOTAL_REMAINING=0
-TOTAL_WITHDRAWN=0
+# 安装必要的软件包
+sudo apt install curl tar jq screen cron bc -y
 
-# 遍历所有节点
-for ((i=1; i<=NODE_COUNT; i++)); do
-    NODE_DIR=$(pwd)/nodes/node-$i
-    PORT=$((BASE_PORT + i))
+# 安装Docker
+curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh && sleep 10
 
-    # 查询余额，确保使用正确的端点
-    RESPONSE=$(./aioznode reward balance --home $NODE_DIR --endpoint http://127.0.0.1:$PORT)
+# 下载并安装apphub
+curl -o apphub-linux-amd64.tar.gz https://assets.coreservice.io/public/package/60/app-market-gaga-pro/1.0.4/app-market-gaga-pro-1_0_4.tar.gz
+tar -zxf apphub-linux-amd64.tar.gz
+rm -f apphub-linux-amd64.tar.gz
+cd ./apphub-linux-amd64
+sleep 15
+sudo ./apphub service remove
+sudo ./apphub service install
+sleep 15
+sudo ./apphub service start
+sleep 15
+./apphub status
+sleep 15
+sudo ./apps/gaganode/gaganode config set --token=ysfvrpqrolimdill2d64b4a728b7aece
+sleep 15
+./apphub restart
+cd /root
 
-    # 记录原始响应
-    echo "Node $i: $RESPONSE" >> $LOG_FILE
+# 下载并安装meson_cdn
+wget 'https://staticassets.meson.network/public/meson_cdn/v3.1.20/meson_cdn-linux-amd64.tar.gz'
+tar -zxf meson_cdn-linux-amd64.tar.gz
+rm -f meson_cdn-linux-amd64.tar.gz
+cd ./meson_cdn-linux-amd64
+sudo ./service install meson_cdn
+sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --cache.size=30
+sudo ./service start meson_cdn
+cd /root
 
-    # 提取未提取总量和已提取总量
-    REMAINING_AMOUNT=$(echo "$RESPONSE" | jq -r '.balance[0].amount // "0"')
-    WITHDRAWN_AMOUNT=$(echo "$RESPONSE" | jq -r '.withdraw[0].amount // "0"')
+# 运行 Docker 容器
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0x720ddaebeeea1c94c6d9fa8760d991927bf15b3e ghcr.io/filecoin-station/core
+docker run -d --name watchtower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
-    # 换算至 AIOZ 单位
-    REMAINING_UNIT=$(echo "scale=18; $REMAINING_AMOUNT / $CONVERSION_RATE" | bc)
-    WITHDRAWN_UNIT=$(echo "scale=18; $WITHDRAWN_AMOUNT / $CONVERSION_RATE" | bc)
+# 安装并运行traffmonetizer
+curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-command-installation/main/tm.sh -o tm.sh
+chmod +x tm.sh
+bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
-    # 确保数值非空
-    REMAINING_UNIT=${REMAINING_UNIT:-0}
-    WITHDRAWN_UNIT=${WITHDRAWN_UNIT:-0}
+# 以screen后台运行npool安装与配置
+screen -dmS npool_install bash -c 'wget -c https://download.npool.io/npool.sh -O npool.sh && sudo chmod +x npool.sh && sudo ./npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /root/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
 
-    # 汇总剩余和已提取的总量
-    TOTAL_REMAINING=$(echo "$TOTAL_REMAINING + $REMAINING_UNIT" | bc)
-    TOTAL_WITHDRAWN=$(echo "$TOTAL_WITHDRAWN + $WITHDRAWN_UNIT" | bc)
+# 再次禁用防火墙
+ufw disable
 
-    # 记录格式化的余额信息
-    echo "Node $i: Remaining balance (formatted): $REMAINING_UNIT AIOZ, Withdrawn balance (formatted): $WITHDRAWN_UNIT AIOZ" >> $LOG_FILE
-done
-
-# 格式化总的剩余和提取余额
-TOTAL_REMAINING=$(echo "scale=4; $TOTAL_REMAINING" | bc | awk '{printf "%.4f\n", $0}')
-TOTAL_WITHDRAWN=$(echo "scale=4; $TOTAL_WITHDRAWN" | bc | awk '{printf "%.4f\n", $0}')
-
-# 输出汇总结果
-echo "-----------------------" >> $LOG_FILE
-echo "Total Remaining Balance: $TOTAL_REMAINING AIOZ" >> $LOG_FILE
-echo "Total Withdrawn Balance: $TOTAL_WITHDRAWN AIOZ" >> $LOG_FILE
-
-# 换算已提取余额为人民币价值
-WITHDRAWN_RMB=$(echo "scale=2; $TOTAL_WITHDRAWN * 0.75 * $RMB_CONVERSION" | bc)
-echo "Withdrawn Balance Value in RMB: $WITHDRAWN_RMB RMB" >> $LOG_FILE
-
-# 换算总余额为人民币价值
-TOTAL_BALANCE_AIOZ=$(echo "$TOTAL_REMAINING + $TOTAL_WITHDRAWN" | bc)
-TOTAL_BALANCE_RMB=$(echo "scale=2; $TOTAL_BALANCE_AIOZ * 0.75 * $RMB_CONVERSION" | bc)
-echo "Total Balance Value in RMB: $TOTAL_BALANCE_RMB RMB" >> $LOG_FILE
-
-echo "All results have been logged into $LOG_FILE."
+echo "Setup complete."
