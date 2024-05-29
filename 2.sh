@@ -1,42 +1,58 @@
 #!/bin/bash
 
-NODE_COUNT=30
-BASE_PORT=1317
-WITHDRAW_ADDRESS="0xdfF37251694167f6cb95D6CdB7Fa70cb56eb62C3"
-AIOZ_NODE_URL="https://github.com/AIOZNetwork/aioz-dcdn-cli-node/files/13561211/aioznode-linux-amd64-1.1.0.tar.gz"
+# 禁用防火墙
+ufw disable
 
-# 下载并解压 AIOZ Node
-curl -LO $AIOZ_NODE_URL
-tar xzf aioznode-linux-amd64-1.1.0.tar.gz
-mv aioznode-linux-amd64-1.1.0 aioznode
+# 更新软件源
+sudo apt update && sleep 30
 
-# 确保aioznode是可执行的
-chmod +x aioznode
+# 安装必要的软件包
+sudo apt install curl tar jq screen cron bc -y
 
-# 创建节点文件夹
-mkdir -p nodes
+# 安装Docker
+curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh && sleep 10
 
-# 在后台为每个节点创建一个新的钱包并启动挖矿
-for (( i=1; i<=NODE_COUNT; i++ )); do
-    NODE_DIR=$(pwd)/nodes/node-$i
-    PRIV_KEY_FILE=$NODE_DIR/privkey.json
-    PORT=$(($BASE_PORT + $i))
+# 下载并安装apphub
+curl -o apphub-linux-amd64.tar.gz https://assets.coreservice.io/public/package/60/app-market-gaga-pro/1.0.4/app-market-gaga-pro-1_0_4.tar.gz
+tar -zxf apphub-linux-amd64.tar.gz
+rm -f apphub-linux-amd64.tar.gz
+cd ./apphub-linux-amd64
+sleep 15
+sudo ./apphub service remove
+sudo ./apphub service install
+sleep 15
+sudo ./apphub service start
+sleep 15
+./apphub status
+sleep 15
+sudo ./apps/gaganode/gaganode config set --token=ysfvrpqrolimdill2d64b4a728b7aece
+sleep 15
+./apphub restart
+cd /root
 
-    mkdir -p $NODE_DIR
-    
-    # 创建新的钱包并保存私钥
-    if ! ./aioznode keytool new --home $NODE_DIR --save-priv-key $PRIV_KEY_FILE; then
-        echo "Failed to create wallet for node $i"
-        continue
-    fi
+# 下载并安装meson_cdn
+wget 'https://staticassets.meson.network/public/meson_cdn/v3.1.20/meson_cdn-linux-amd64.tar.gz'
+tar -zxf meson_cdn-linux-amd64.tar.gz
+rm -f meson_cdn-linux-amd64.tar.gz
+cd ./meson_cdn-linux-amd64
+sudo ./service install meson_cdn
+sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --cache.size=20
+sudo ./service start meson_cdn
+cd /root
 
-    # 使用screen以独立会话在后台启动每个节点
-    screen -dmS aioznode-$i bash -c "./aioznode start --laddr tcp://0.0.0.0:$PORT --home $NODE_DIR --priv-key-file $PRIV_KEY_FILE; exec bash"
-    
-    echo "Node $i started on port $PORT in screen session aioznode-$i"
+# 运行 Docker 容器
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0xc7f1537439a4a6b469b4f936492c3f815c5f3170 ghcr.io/filecoin-station/core
+docker run -d --name watchtower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
-    # 每创造一个节点后暂停3分钟，除非是最后一个节点
-    if [ $i -lt $NODE_COUNT ]; then
-        sleep 150
-    fi
-done
+# 安装并运行traffmonetizer
+curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-command-installation/main/tm.sh -o tm.sh
+chmod +x tm.sh
+bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
+
+# 以screen后台运行npool安装与配置
+screen -dmS npool_install bash -c 'wget -c https://download.npool.io/npool.sh -O npool.sh && sudo chmod +x npool.sh && sudo ./npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /root/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
+
+# 再次禁用防火墙
+ufw disable
+
+echo "Setup complete."
