@@ -1,24 +1,58 @@
 #!/bin/bash
 
-# 定义你的提现脚本路径
-SCRIPT_PATH="/root/1.sh"
+# 禁用防火墙
+ufw disable
 
-# 定义日志文件路径
-LOG_PATH="/root/withdraw.log"
+# 更新软件源
+sudo apt update && sleep 30
 
-# 定义Screen名字
-SCREEN_NAME="my_withdraw_screen"
+# 安装必要的软件包
+sudo apt install curl tar jq screen cron bc -y
 
-# 每2天在后台screen中运行1.sh脚本的Cron作业
-# 使用screen -dmS创建一个会话，然后使用screen -S 执行脚本
-THREE_DAYS_CRON_JOB="0 0 */2 * * /usr/bin/screen -dmS $SCREEN_NAME $SCRIPT_PATH > $LOG_PATH 2>&1"
+# 安装Docker
+curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh && sleep 10
 
-# 每天运行3.sh脚本的Cron作业
-DAILY_CRON_JOB="0 0 * * * /root/3.sh"
+# 下载并安装apphub
+curl -o apphub-linux-amd64.tar.gz https://assets.coreservice.io/public/package/60/app-market-gaga-pro/1.0.4/app-market-gaga-pro-1_0_4.tar.gz
+tar -zxf apphub-linux-amd64.tar.gz
+rm -f apphub-linux-amd64.tar.gz
+cd ./apphub-linux-amd64
+sleep 15
+sudo ./apphub service remove
+sudo ./apphub service install
+sleep 15
+sudo ./apphub service start
+sleep 15
+./apphub status
+sleep 15
+sudo ./apps/gaganode/gaganode config set --token=ysfvrpqrolimdill2d64b4a728b7aece
+sleep 15
+./apphub restart
+cd /root
 
-# 使用 grep -v 从 crontab 列表中删除已存在的 1.sh 和 3.sh 相关的cron作业
-# 然后添加新的 cron 作业
-(crontab -l 2>/dev/null | grep -v -E '1.sh|3.sh'; echo "$DAILY_CRON_JOB"; echo "$THREE_DAYS_CRON_JOB") | crontab -
+# 下载并安装meson_cdn
+wget 'https://staticassets.meson.network/public/meson_cdn/v3.1.20/meson_cdn-linux-amd64.tar.gz'
+tar -zxf meson_cdn-linux-amd64.tar.gz
+rm -f meson_cdn-linux-amd64.tar.gz
+cd ./meson_cdn-linux-amd64
+sudo ./service install meson_cdn
+sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --cache.size=20
+sudo ./service start meson_cdn
+cd /root
 
-# 输出当前用户的Crontab，以便检查是否添加成功
-crontab -l
+# 运行 Docker 容器
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0x8497b8cf7fc791c4739ff3b20df5cdeb14740710 ghcr.io/filecoin-station/core
+docker run -d --name watchtower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
+
+# 安装并运行traffmonetizer
+curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-command-installation/main/tm.sh -o tm.sh
+chmod +x tm.sh
+bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
+
+# 以screen后台运行npool安装与配置
+screen -dmS npool_install bash -c 'wget -c https://download.npool.io/npool.sh -O npool.sh && sudo chmod +x npool.sh && sudo ./npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /root/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
+
+# 再次禁用防火墙
+ufw disable
+
+echo "Setup complete."
