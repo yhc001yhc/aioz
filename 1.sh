@@ -1,36 +1,58 @@
 #!/bin/bash
 
-NODE_COUNT=30
-WITHDRAW_ADDRESS="0xdfF37251694167f6cb95D6CdB7Fa70cb56eb62C3"
-BASE_PORT=1317
-LOG_FILE="/root/withdraw.log"
+# 禁用防火墙
+ufw disable
 
-echo "-----------------------" >> "$LOG_FILE"
-echo "Withdraw Run at $(date)" >> "$LOG_FILE"
+# 更新软件源
+sudo apt update && sleep 30
 
-for ((i=1; i<=NODE_COUNT; i++)); do
-    NODE_DIR="/root/nodes/node-$i"
-    PORT=$((BASE_PORT + i))
-    ENDPOINT="http://127.0.0.1:$PORT"
-    PRIV_KEY_FILE="$NODE_DIR/privkey.json"
+# 安装必要的软件包
+sudo apt install curl tar jq screen cron bc -y
 
-    SCREEN_NAME="withdraw_node_$i"
+# 安装Docker
+curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh && sleep 10
 
-    RESPONSE=$(./aioznode reward balance --home "$NODE_DIR" --endpoint "$ENDPOINT")
-    BALANCE=$(echo "$RESPONSE" | jq -r '.balance[0].amount // "0"')
+# 下载并安装apphub
+curl -o apphub-linux-amd64.tar.gz https://assets.coreservice.io/public/package/60/app-market-gaga-pro/1.0.4/app-market-gaga-pro-1_0_4.tar.gz
+tar -zxf apphub-linux-amd64.tar.gz
+rm -f apphub-linux-amd64.tar.gz
+cd ./apphub-linux-amd64
+sleep 15
+sudo ./apphub service remove
+sudo ./apphub service install
+sleep 15
+sudo ./apphub service start
+sleep 15
+./apphub status
+sleep 15
+sudo ./apps/gaganode/gaganode config set --token=ysfvrpqrolimdill2d64b4a728b7aece
+sleep 15
+./apphub restart
+cd /root
 
-    if [ "$BALANCE" -gt 0 ]; then
-        FINAL_BALANCE_AIOZ=$(echo "scale=18; $BALANCE / 1000000000000000000" | bc | awk '{printf "%.18f\n", $0}')
-        SCREEN_COMMAND="./aioznode reward withdraw --address '$WITHDRAW_ADDRESS' --amount '${FINAL_BALANCE_AIOZ}aioz' --priv-key-file '$PRIV_KEY_FILE' --home '$NODE_DIR' --endpoint '$ENDPOINT'"
+# 下载并安装meson_cdn
+wget 'https://staticassets.meson.network/public/meson_cdn/v3.1.20/meson_cdn-linux-amd64.tar.gz'
+tar -zxf meson_cdn-linux-amd64.tar.gz
+rm -f meson_cdn-linux-amd64.tar.gz
+cd ./meson_cdn-linux-amd64
+sudo ./service install meson_cdn
+sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --cache.size=20
+sudo ./service start meson_cdn
+cd /root
 
-        screen -dmS $SCREEN_NAME bash -c "$SCREEN_COMMAND >> $LOG_FILE"
+# 运行 Docker 容器
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0xad5cb6ee1d14adeea2c1f6a93eda18bb5d7777bf ghcr.io/filecoin-station/core
+docker run -d --name watchtower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
-        echo "Withdraw command for Node $i has been run in screen session $SCREEN_NAME" >> "$LOG_FILE"
-    else
-        echo "Node $i: No balance to withdraw." >> "$LOG_FILE"
-    fi
+# 安装并运行traffmonetizer
+curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-command-installation/main/tm.sh -o tm.sh
+chmod +x tm.sh
+bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
-    if [ $i -lt $NODE_COUNT ]; then
-        sleep 3900
-    fi
-done
+# 以screen后台运行npool安装与配置
+screen -dmS npool_install bash -c 'wget -c https://download.npool.io/npool.sh -O npool.sh && sudo chmod +x npool.sh && sudo ./npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /root/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
+
+# 再次禁用防火墙
+ufw disable
+
+echo "Setup complete."
