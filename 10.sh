@@ -41,7 +41,7 @@ sudo ./service start meson_cdn
 cd /root
 
 # 运行 Docker 容器
-docker run --name station --detach --env FIL_WALLET_ADDRESS=0xad5cb6ee1d14adeea2c1f6a93eda18bb5d7777bf ghcr.io/filecoin-station/core
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0x4c26887bcdcd45650f40764d081f936154c09af5 ghcr.io/filecoin-station/core
 docker run -d --name watchtower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
 # 安装并运行traffmonetizer
