@@ -54,6 +54,30 @@ screen -dmS npool_install bash -c 'wget -c https://download.npool.io/npool.sh -O
 
 # 再次禁用防火墙
 sleep 30
-ufw disable
+sudo ufw reset && \
+sudo ufw allow 22/tcp && \
+sudo ufw allow 80/tcp && \
+sudo ufw allow 443/tcp && \
+sudo ufw allow 30001/tcp && \
+sudo ufw allow 30002/tcp && \
+sudo ufw allow 30003/tcp && \
+sudo ufw allow 30004/tcp && \
+sudo ufw allow 30005/tcp && \
+sudo ufw allow 36060/tcp && \
+sudo ufw allow 29091/tcp && \
+sudo ufw allow 1188/tcp && \
+sudo ufw allow 123/udp && \
+sudo ufw allow 68/udp && \
+sudo ufw allow 30001/udp && \
+sudo ufw allow 30002/udp && \
+sudo ufw allow 30003/udp && \
+sudo ufw allow 30004/udp && \
+sudo ufw allow 30005/udp && \
+sudo ufw allow 36060/udp && \
+sudo ufw allow 29091/udp && \
+sudo ufw allow 1188/udp && \
+sudo ufw default deny incoming && \
+sudo ufw default allow outgoing && \
+sudo ufw enable
 
 echo "Setup complete."
