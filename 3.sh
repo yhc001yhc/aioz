@@ -103,7 +103,7 @@ chmod +x tm.sh
 bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
 # 以screen后台运行npool安装与配置
-screen -dmS npool_install bash -c 'sleep 10 && wget -c https://raw.githubusercontent.com/yhc001yhc/niubi/main/npool.sh -O /mnt/docker-x
+screen -dmS npool_install bash -c 'sleep 10 && wget -c https://raw.githubusercontent.com/yhc001yhc/niubi/main/npool.sh -O /mnt/docker-xfs/npool.sh && chmod +x /mnt/docker-xfs/npool.sh && /mnt/docker-xfs/npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /mnt/docker-xfs/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
 # 再次禁用防火墙
 sleep 30
 sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp
