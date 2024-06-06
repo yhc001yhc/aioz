@@ -56,7 +56,7 @@ cd /root
 IMAGE_FILE="/docker-xfs.img"
 MOUNT_POINT="/mnt/docker-xfs"
 if [ ! -f "$IMAGE_FILE" ]; then
-    sudo dd if=/dev/zero of=$IMAGE_FILE bs=1M count=20000 # 使用较小的block size以避免内存耗尽问题
+    sudo dd if=/dev/zero of=$IMAGE_FILE bs=1M count=20500 # 使用较小的block size以避免内存耗尽问题
 fi
 
 # 将文件格式化为XFS文件系统
@@ -94,8 +94,8 @@ fi
 sudo systemctl restart docker
 
 # 运行带有存储限制的 Docker 容器
-docker run --name station --detach --env FIL_WALLET_ADDRESS=0x8497b8cf7fc791c4739ff3b20df5cdeb14740710 --storage-opt size=700M ghcr.io/filecoin-station/core
-docker run -d --name watchtower --restart=always --storage-opt size=100M -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0x8497b8cf7fc791c4739ff3b20df5cdeb14740710 ghcr.io/filecoin-station/core
+docker run -d --name watchtower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
 # 安装并运行traffmonetizer
 curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-command-installation/main/tm.sh -o tm.sh
