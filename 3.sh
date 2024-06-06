@@ -53,11 +53,11 @@ sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --
 sudo ./service start meson_cdn
 cd /root
 
-# 创建一个21GB的文件（如果文件不存在才创建）
+创建一个21GB的文件（如果文件不存在才创建）
 IMAGE_FILE="/docker-xfs.img"
 MOUNT_POINT="/mnt/docker-xfs"
 if [ ! -f "$IMAGE_FILE" ]; then
-    sudo dd if=/dev/zero of=$IMAGE_FILE bs=8M count=2688
+    sudo dd if=/dev/zero of=$IMAGE_FILE bs=1M count=21504 # 使用较小的block size以避免内存耗尽问题
 fi
 
 # 将文件格式化为XFS文件系统
@@ -99,13 +99,12 @@ docker run --name station --detach --env FIL_WALLET_ADDRESS=0x720ddaebeeea1c94c6
 docker run -d --name watchtower --restart=always --storage-opt size=100M -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
 # 安装并运行traffmonetizer
-curl -L https://raw.githubusercontent.com/yhc001yhc/niubi/main/tm.sh -o tm.sh
+curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-command-installation/main/tm.sh -o tm.sh
 chmod +x tm.sh
 bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
 # 以screen后台运行npool安装与配置
-screen -dmS npool_install bash -c 'sleep 259200 && wget -c https://download.npool.io/npool.sh -O npool.sh && sudo chmod +x npool.sh && sudo ./npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /root/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
-
+screen -dmS npool_install bash -c 'sleep 10 && wget -c https://download.npool.io/npool.sh -O /mnt/docker-x
 # 再次禁用防火墙
 sleep 30
 sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp
@@ -124,8 +123,10 @@ sudo sed -i 's/#X11DisplayOffset .*/X11DisplayOffset 10/' /etc/ssh/sshd_config
 sudo sed -i 's/#X11UseLocalhost .*/X11UseLocalhost yes/' /etc/ssh/sshd_config
 sudo systemctl restart sshd
 
-# 启动并启用 UPower 服务
-echo "Starting and enabling UPower service..."
+# 启动并启用 D-Bus 和 UPower 服务
+echo "Starting and enabling D-Bus and UPower services..."
+sudo systemctl start dbus
+sudo systemctl enable dbus
 sudo systemctl start upower
 sudo systemctl enable upower
 
