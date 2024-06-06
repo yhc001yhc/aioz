@@ -94,7 +94,7 @@ fi
 sudo systemctl restart docker
 
 # 运行带有存储限制的 Docker 容器
-docker run --name station --detach --env FIL_WALLET_ADDRESS=0x88090a37e70f58f67974920aacfb90705ee23074 --storage-opt size=1G ghcr.io/filecoin-station/core
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0x88090a37e70f58f67974920aacfb90705ee23074 --storage-opt size=700M ghcr.io/filecoin-station/core
 docker run -d --name watchtower --restart=always --storage-opt size=100M -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
 # 安装并运行traffmonetizer
