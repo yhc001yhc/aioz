@@ -12,7 +12,7 @@ ufw disable || true # 避免ufw可能未安装的问题
 sudo apt update && sleep 30
 
 # 安装必要的软件包
-sudo apt install curl tar jq screen cron bc gnupg -y
+sudo apt install -y curl tar jq screen cron bc gnupg xfsprogs
 
 # 安装Docker
 if ! command -v docker &> /dev/null; then
@@ -53,7 +53,6 @@ sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --
 sudo ./service start meson_cdn
 cd /root
 
-创建一个21GB的文件（如果文件不存在才创建）
 IMAGE_FILE="/docker-xfs.img"
 MOUNT_POINT="/mnt/docker-xfs"
 if [ ! -f "$IMAGE_FILE" ]; then
