@@ -56,7 +56,7 @@ cd /root
 IMAGE_FILE="/docker-xfs.img"
 MOUNT_POINT="/mnt/docker-xfs"
 if [ ! -f "$IMAGE_FILE" ]; then
-    sudo dd if=/dev/zero of=$IMAGE_FILE bs=1M count=900 # 使用较小的block size以避免内存耗尽问题
+    sudo dd if=/dev/zero of=$IMAGE_FILE bs=1M count=1024 # 使用较小的block size以避免内存耗尽问题
 fi
 
 # 将文件格式化为XFS文件系统
