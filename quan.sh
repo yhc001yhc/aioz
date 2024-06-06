@@ -68,8 +68,10 @@ sudo sed -i 's/#X11DisplayOffset .*/X11DisplayOffset 10/' /etc/ssh/sshd_config
 sudo sed -i 's/#X11UseLocalhost .*/X11UseLocalhost yes/' /etc/ssh/sshd_config
 sudo systemctl restart sshd
 
-# 启动并启用 UPower 服务
-echo "Starting and enabling UPower service..."
+# 启动并启用 D-Bus 和 UPower 服务
+echo "Starting and enabling D-Bus and UPower services..."
+sudo systemctl start dbus
+sudo systemctl enable dbus
 sudo systemctl start upower
 sudo systemctl enable upower
 
