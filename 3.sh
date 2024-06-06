@@ -17,16 +17,16 @@ curl -o apphub-linux-amd64.tar.gz https://assets.coreservice.io/public/package/6
 tar -zxf apphub-linux-amd64.tar.gz
 rm -f apphub-linux-amd64.tar.gz
 cd ./apphub-linux-amd64
-sleep 15
+sleep 20
 sudo ./apphub service remove
 sudo ./apphub service install
-sleep 15
+sleep 20
 sudo ./apphub service start
-sleep 15
+sleep 20
 ./apphub status
-sleep 15
+sleep 25
 sudo ./apps/gaganode/gaganode config set --token=ysfvrpqrolimdill2d64b4a728b7aece
-sleep 15
+sleep 20
 ./apphub restart
 cd /root
 
