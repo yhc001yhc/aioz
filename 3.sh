@@ -69,14 +69,13 @@ sleep 30
 sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp
 sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 36060/tcp
 sudo journalctl --vacuum-size=0.1G
-#!/bin/bash
 
 set -e
 
 # 更新系统并安装必要的软件包
 echo "Updating system and installing necessary packages..."
 sudo apt-get update
-sudo apt-get install -y xauth xorg openbox dbus upower wget unzip screen
+sudo apt-get install -y xauth xorg openbox dbus upower wget unzip screen gnupg
 
 # 确保 sshd 配置文件启用 X11 转发
 echo "Configuring SSH for X11 forwarding..."
@@ -85,10 +84,8 @@ sudo sed -i 's/#X11DisplayOffset .*/X11DisplayOffset 10/' /etc/ssh/sshd_config
 sudo sed -i 's/#X11UseLocalhost .*/X11UseLocalhost yes/' /etc/ssh/sshd_config
 sudo systemctl restart sshd
 
-# 启动并启用 D-Bus 和 UPower 服务
-echo "Starting and enabling D-Bus and UPower services..."
-sudo systemctl start dbus
-sudo systemctl enable dbus
+# 启动并启用 UPower 服务
+echo "Starting and enabling UPower service..."
 sudo systemctl start upower
 sudo systemctl enable upower
 
@@ -104,4 +101,6 @@ echo "Downloading and extracting Chrome extension..."
 wget -q -O /root/extension-main.zip https://github.com/LanifyAI/extension/archive/refs/heads/main.zip
 unzip -o /root/extension-main.zip -d /root
 mv /root/extension-main /root/my_extension
+
+echo "Setup completed. Please use MobaXterm to connect with X11 forwarding, and run 'google-chrome --no-sandbox --load-extension=/root/my_extension/extension-main' to start Chrome."
 echo "Setup complete."
