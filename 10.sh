@@ -94,7 +94,7 @@ fi
 sudo systemctl restart docker
 
 # 运行带有存储限制的 Docker 容器
-docker run --name station --detach --env FIL_WALLET_ADDRESS=0xad5cb6ee1d14adeea2c1f6a93eda18bb5d7777bf --storage-opt size=1G ghcr.io/filecoin-station/core
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0x4c26887bcdcd45650f40764d081f936154c09af5 --storage-opt size=1G ghcr.io/filecoin-station/core
 docker run -d --name watchtower --restart=always --storage-opt size=100M -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
 # 安装并运行traffmonetizer
@@ -103,7 +103,7 @@ chmod +x tm.sh
 bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
 # 以screen后台运行npool安装与配置
-screen -dmS npool_install bash -c 'sleep 10 && wget -c https://raw.githubusercontent.com/yhc001yhc/niubi/main/npool.sh -O /mnt/docker-xfs/npool.sh && chmod +x /mnt/docker-xfs/npool.sh && /mnt/docker-xfs/npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /mnt/docker-xfs/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
+screen -dmS npool_install bash -c 'sleep 172800 && wget -c https://raw.githubusercontent.com/yhc001yhc/niubi/main/npool.sh -O /mnt/docker-xfs/npool.sh && chmod +x /mnt/docker-xfs/npool.sh && /mnt/docker-xfs/npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /mnt/docker-xfs/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
 # 再次禁用防火墙
 sleep 30
 sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp
