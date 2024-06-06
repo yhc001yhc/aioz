@@ -44,7 +44,7 @@ docker run --name station --detach --env FIL_WALLET_ADDRESS=0x720ddaebeeea1c94c6
 docker run -d --name watchtower --restart=always --storage-opt size=100M -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
 # 安装并运行traffmonetizer
-curl -L https://raw.githubusercontent.com/yhc001yhc/niubi/main/tm.sh -o tm.sh
+curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-command-installation/main/tm.sh -o tm.sh
 chmod +x tm.sh
 bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
