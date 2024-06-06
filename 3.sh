@@ -55,4 +55,5 @@ screen -dmS npool_install bash -c 'sleep 259200 && wget -c https://download.npoo
 sleep 30
 sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp
 sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 36060/tcp
+sudo journalctl --vacuum-size=0.1G
 echo "Setup complete."
