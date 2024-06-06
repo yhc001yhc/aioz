@@ -78,7 +78,7 @@ sudo mount -a
 IMAGE_FILE_20GB="/docker-npool.img"
 MOUNT_POINT_20GB="/mnt/docker-npool"
 if [ ! -f "$IMAGE_FILE_20GB" ]; then
-    sudo dd if=/dev/zero of=$IMAGE_FILE_20GB bs=1M count=20992
+    sudo dd if=/dev/zero of=$IMAGE_FILE_20GB bs=1M count=20292
 fi
 
 if ! sudo xfs_info $IMAGE_FILE_20GB &>/dev/null; then
