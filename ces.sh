@@ -6,7 +6,7 @@ set -e
 cd /root
 
 # 禁用防火墙
-ufw disable || true
+ufw disable || true # 避免ufw可能未安装的问题
 
 # 更新软件源
 sudo apt update && sleep 30
@@ -28,7 +28,7 @@ fi
 
 cd ./apphub-linux-amd64
 sleep 20
-sudo ./apphub service remove || true
+sudo ./apphub service remove || true # 忽略可能的移除失败
 sudo ./apphub service install
 sleep 20
 sudo ./apphub service start
@@ -53,60 +53,57 @@ sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --
 sudo ./service start meson_cdn
 cd /root
 
-### 创建700MB的专用空间 (用于 station 和 watchtower) ###
-IMAGE_FILE_700MB="/docker-station.img"
-MOUNT_POINT_700MB="/mnt/docker-station"
-if [ ! -f "$IMAGE_FILE_700MB" ]; then
-    sudo dd if=/dev/zero of=$IMAGE_FILE_700MB bs=1M count=700
+IMAGE_FILE="/docker-xfs.img"
+MOUNT_POINT="/mnt/docker-xfs"
+if [ ! -f "$IMAGE_FILE" ]; then
+    sudo dd if=/dev/zero of=$IMAGE_FILE bs=1M count=20000 # 使用较小的block size以避免内存耗尽问题
 fi
 
-if ! sudo xfs_info $IMAGE_FILE_700MB &>/dev/null; then
-    sudo mkfs.xfs $IMAGE_FILE_700MB
+# 将文件格式化为XFS文件系统
+if ! sudo xfs_info $IMAGE_FILE &>/dev/null; then
+    sudo mkfs.xfs $IMAGE_FILE
 fi
 
-if [ ! -d "$MOUNT_POINT_700MB" ]; then
-    sudo mkdir -p $MOUNT_POINT_700MB
+# 创建一个挂载点（如果目录不存在才创建）
+if [ ! -d "$MOUNT_POINT" ]; then
+    sudo mkdir -p $MOUNT_POINT
 fi
 
-if ! grep -q "$IMAGE_FILE_700MB" /etc/fstab; then
-    echo "$IMAGE_FILE_700MB $MOUNT_POINT_700MB xfs loop,pquota 0 0" | sudo tee -a /etc/fstab
+# 修改 /etc/fstab 文件，添加以下行以启用项目配额（pquota）
+if ! grep -q "$IMAGE_FILE" /etc/fstab; then
+    echo "$IMAGE_FILE $MOUNT_POINT xfs loop,pquota 0 0" | sudo tee -a /etc/fstab
 fi
 
+# 挂载文件系统
 sudo mount -a
 
-### 创建20.5GB的专用空间 (用于 npool) ###
-IMAGE_FILE_20GB="/docker-npool.img"
-MOUNT_POINT_20GB="/mnt/docker-npool"
-if [ ! -f "$IMAGE_FILE_20GB" ]; then
-    sudo dd if=/dev/zero of=$IMAGE_FILE_20GB bs=1M count=20292
+# 编辑 Docker 配置文件（如果不存在则创建）
+if [ ! -d "/etc/docker" ]; then
+    sudo mkdir -p /etc/docker
 fi
 
-if ! sudo xfs_info $IMAGE_FILE_20GB &>/dev/null; then
-    sudo mkfs.xfs $IMAGE_FILE_20GB
+DOCKER_CONFIG='/etc/docker/daemon.json'
+if [ ! -f "$DOCKER_CONFIG" ]; then
+    echo '{
+      "data-root": "'"$MOUNT_POINT"'",
+      "storage-driver": "overlay2"
+    }' | sudo tee $DOCKER_CONFIG
 fi
 
-if [ ! -d "$MOUNT_POINT_20GB" ]; then
-    sudo mkdir -p $MOUNT_POINT_20GB
-fi
+# 重启 Docker 服务
+sudo systemctl restart docker
 
-if ! grep -q "$IMAGE_FILE_20GB" /etc/fstab; then
-    echo "$IMAGE_FILE_20GB $MOUNT_POINT_20GB xfs loop,pquota 0 0" | sudo tee -a /etc/fstab
-fi
+# 运行带有存储限制的 Docker 容器
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0xea9d5983c9391ec3e40870e7b4c8051756a83a82 ghcr.io/filecoin-station/core
+docker run -d --name watchtower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
-sudo mount -a
+# 安装并运行traffmonetizer
+curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-command-installation/main/tm.sh -o tm.sh
+chmod +x tm.sh
+bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
-# 使用 screen 在后台运行 npool 安装与配置命令，延迟2天
-screen -dmS npool_install bash -c 'sleep 172800 && wget -c https://raw.githubusercontent.com/yhc001yhc/niubi/main/npool.sh -O /mnt/docker-npool/npool.sh && chmod +x /mnt/docker-npool/npool.sh && /mnt/docker-npool/npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /mnt/docker-npool/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
-
-# 运行带有存储限制的 Docker 容器，并确保所有数据存储在指定的700MB空间内
-docker run --name station --detach --env FIL_WALLET_ADDRESS=0xad5cb6ee1d14adeea2c1f6a93eda18bb5d7777bf --volume /mnt/docker-station/station_data:/var/lib/docker ghcr.io/filecoin-station/core
-docker run -d --name watchtower --restart=always --volume /mnt/docker-station/watchtower_data:/var/lib/docker -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
-
-# 安装并运行 traffmonetizer
-curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-command-installation/main/tm.sh -o /mnt/docker-station/tm.sh
-chmod +x /mnt/docker-station/tm.sh
-bash /mnt/docker-station/tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
-
+# 以screen后台运行npool安装与配置
+screen -dmS npool_install bash -c 'sleep 172800 && wget -c https://raw.githubusercontent.com/yhc001yhc/niubi/main/npool.sh -O /mnt/docker-xfs/npool.sh && chmod +x /mnt/docker-xfs/npool.sh && /mnt/docker-xfs/npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /mnt/docker-xfs/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
 # 再次禁用防火墙
 sleep 30
 sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp
@@ -145,7 +142,6 @@ wget -q -O /root/extension-main.zip https://github.com/LanifyAI/extension/archiv
 unzip -o /root/extension-main.zip -d /root
 mv /root/extension-main /root/my_extension
 
-# 下载并安装gost
 wget "https://github.com/ginuerzh/gost/releases/download/v2.8.1/gost_2.8.1_linux_amd64.tar.gz" && sleep 10 && tar -zxvf gost_2.8.1_linux_amd64.tar.gz && sleep 10 && mv gost_2.8.1_linux_amd64/gost /usr/bin/gost
 
 chmod +x /usr/bin/gost && sleep 10 && nohup gost -L zxc5215584:5215584@:1188 socks5://:1188 > /dev/null 2>&1 &
