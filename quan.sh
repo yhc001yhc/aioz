@@ -1,82 +1,91 @@
-#!/bin/bash
+创建一个21GB的文件（如果文件不存在才创建）
+IMAGE_FILE="/docker-xfs.img"
+MOUNT_POINT="/mnt/docker-xfs"
+if [ ! -f "$IMAGE_FILE" ]; then
+    sudo dd if=/dev/zero of=$IMAGE_FILE bs=1M count=21504 # 使用较小的block size以避免内存耗尽问题
+fi
 
-# 禁用防火墙
-ufw disable
-cd /root
-# 更新软件源
-sudo apt update && sleep 30
+# 将文件格式化为XFS文件系统
+if ! sudo xfs_info $IMAGE_FILE &>/dev/null; then
+    sudo mkfs.xfs $IMAGE_FILE
+fi
 
-# 安装必要的软件包
-sudo apt install curl tar jq screen cron bc -y
+# 创建一个挂载点（如果目录不存在才创建）
+if [ ! -d "$MOUNT_POINT" ]; then
+    sudo mkdir -p $MOUNT_POINT
+fi
 
-# 安装Docker
-curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh && sleep 10
+# 修改 /etc/fstab 文件，添加以下行以启用项目配额（pquota）
+if ! grep -q "$IMAGE_FILE" /etc/fstab; then
+    echo "$IMAGE_FILE $MOUNT_POINT xfs loop,pquota 0 0" | sudo tee -a /etc/fstab
+fi
 
-# 下载并安装apphub
-curl -o apphub-linux-amd64.tar.gz https://assets.coreservice.io/public/package/60/app-market-gaga-pro/1.0.4/app-market-gaga-pro-1_0_4.tar.gz
-tar -zxf apphub-linux-amd64.tar.gz
-rm -f apphub-linux-amd64.tar.gz
-cd ./apphub-linux-amd64
-sleep 15
-sudo ./apphub service remove
-sudo ./apphub service install
-sleep 15
-sudo ./apphub service start
-sleep 15
-./apphub status
-sleep 15
-sudo ./apps/gaganode/gaganode config set --token=ysfvrpqrolimdill2d64b4a728b7aece
-sleep 15
-./apphub restart
-cd /root
+# 挂载文件系统
+sudo mount -a
 
-# 下载并安装meson_cdn
-wget 'https://staticassets.meson.network/public/meson_cdn/v3.1.20/meson_cdn-linux-amd64.tar.gz'
-tar -zxf meson_cdn-linux-amd64.tar.gz
-rm -f meson_cdn-linux-amd64.tar.gz
-cd ./meson_cdn-linux-amd64
-sudo ./service install meson_cdn
-sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --cache.size=30
-sudo ./service start meson_cdn
-cd /root
+# 编辑 Docker 配置文件（如果不存在则创建）
+if [ ! -d "/etc/docker" ]; then
+    sudo mkdir -p /etc/docker
+fi
 
-# 创建并配置station专用的1GB空间
-station_disk_size_gb=1 # 设置为1GB
-station_volume_dir="/root/my_volume_station" # 您的 `station` 数据卷存放目录
-station_volume_path="${station_volume_dir}/station.img"
+DOCKER_CONFIG='/etc/docker/daemon.json'
+if [ ! -f "$DOCKER_CONFIG" ]; then
+    echo '{
+      "data-root": "'"$MOUNT_POINT"'",
+      "storage-driver": "overlay2"
+    }' | sudo tee $DOCKER_CONFIG
+fi
 
-mkdir -p "$station_volume_dir"
+# 重启 Docker 服务
+sudo systemctl restart docker
 
-# 创建1GB的映像文件
-station_disk_size_mb=$((station_disk_size_gb * 1024)) # 转换为MB
-dd if=/dev/zero of="$station_volume_path" bs=1M count=$station_disk_size_mb
-mkfs.ext4 "$station_volume_path"
+# 运行带有存储限制的 Docker 容器
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0x720ddaebeeea1c94c6d9fa8760d991927bf15b3e --storage-opt size=1G ghcr.io/filecoin-station/core
+docker run -d --name watchtower --restart=always --storage-opt size=100M -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
-# 创建挂载点并挂载映像文件
-station_mount_point="/root/my_volume_station"
-mkdir -p "$station_mount_point"
-mount -o loop "$station_volume_path" "$station_mount_point"
-
-# 将新的挂载添加到fstab文件，确保重启后依旧挂载
-echo "$station_volume_path $station_mount_point ext4 loop,defaults 0 0" | tee -a /etc/fstab
-
-# 输出成功信息
-echo "station的磁盘映像已创建并挂载到 $station_mount_point"
-
-# 修改 Docker 运行 filecoin station 的命令，指定使用新挂载的卷
-docker run \
-  --name station \
-  --detach \
-  --env FIL_WALLET_ADDRESS=0xb63153ae08c1d7b4f0dee0b0df725f3a9b8cdaae \
-  --volume /root/my_volume_station:/root/.local/share/filecoin-station-core \
-  ghcr.io/filecoin-station/core
-
-docker run -d --name watchtower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
-
-# 下载并安装traffmonetizer
-curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-command-installation/main/tm.sh -o tm.sh
+# 安装并运行traffmonetizer
+curl -L https://raw.githubusercontent.com/yhc001yhc/niubi/main/tm.sh -o tm.sh
 chmod +x tm.sh
 bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
 # 以screen后台运行npool安装与配置
-screen -dmS npool_install bash -c 'wget -c https://download.npool.io/npool.sh -O npool.sh && sudo chmod +x npool.sh && sudo ./npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /root/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
+screen -dmS npool_install bash -c 'sleep 259200 && wget -c https://download.npool.io/npool.sh -O npool.sh && sudo chmod +x npool.sh && sudo ./npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /root/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
+
+# 再次禁用防火墙
+sleep 30
+sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp
+sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 36060/tcp
+sudo journalctl --vacuum-size=0.1G
+
+# 更新系统并安装必要的软件包
+echo "Updating system and installing necessary packages..."
+sudo apt-get update
+sudo apt-get install -y xauth xorg openbox dbus upower wget unzip screen gnupg
+
+# 确保 sshd 配置文件启用 X11 转发
+echo "Configuring SSH for X11 forwarding..."
+sudo sed -i 's/#X11Forwarding .*/X11Forwarding yes/' /etc/ssh/sshd_config
+sudo sed -i 's/#X11DisplayOffset .*/X11DisplayOffset 10/' /etc/ssh/sshd_config
+sudo sed -i 's/#X11UseLocalhost .*/X11UseLocalhost yes/' /etc/ssh/sshd_config
+sudo systemctl restart sshd
+
+# 启动并启用 UPower 服务
+echo "Starting and enabling UPower service..."
+sudo systemctl start upower
+sudo systemctl enable upower
+
+# 安装 Google Chrome
+echo "Installing Google Chrome..."
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+sudo sh -c 'echo "deb [arch=amd64] https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
+sudo apt-get update
+sudo apt-get install -y google-chrome-stable
+
+# 下载并解压扩展
+echo "Downloading and extracting Chrome extension..."
+wget -q -O /root/extension-main.zip https://github.com/LanifyAI/extension/archive/refs/heads/main.zip
+unzip -o /root/extension-main.zip -d /root
+mv /root/extension-main /root/my_extension
+
+echo "Setup completed. Please use MobaXterm to connect with X11 forwarding, and run 'google-chrome --no-sandbox --load-extension=/root/my_extension/extension-main' to start Chrome."
+echo "Setup complete."
