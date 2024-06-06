@@ -1,3 +1,4 @@
+#!/bin/bash
 创建一个21GB的文件（如果文件不存在才创建）
 IMAGE_FILE="/docker-xfs.img"
 MOUNT_POINT="/mnt/docker-xfs"
