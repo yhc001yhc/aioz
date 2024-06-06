@@ -40,7 +40,32 @@ sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --
 sudo ./service start meson_cdn
 cd /root
 
-# 运行 Docker 容器
+# 创建一个21GB的文件
+sudo dd if=/dev/zero of=/docker-xfs.img bs=1G count=21
+
+# 将文件格式化为XFS文件系统
+sudo mkfs.xfs /docker-xfs.img
+
+# 创建一个挂载点
+sudo mkdir /mnt/docker-xfs
+
+# 修改 /etc/fstab 文件，添加以下行以启用项目配额（pquota）
+echo '/docker-xfs.img /mnt/docker-xfs xfs loop,pquota 0 0' | sudo tee -a /etc/fstab
+
+# 挂载文件系统
+sudo mount -a
+
+# 编辑 Docker 配置文件
+sudo mkdir -p /etc/docker
+echo '{
+  "data-root": "/mnt/docker-xfs",
+  "storage-driver": "overlay2"
+}' | sudo tee /etc/docker/daemon.json
+
+# 重启 Docker 服务
+sudo systemctl restart docker
+
+# 运行带有存储限制的 Docker 容器
 docker run --name station --detach --env FIL_WALLET_ADDRESS=0x720ddaebeeea1c94c6d9fa8760d991927bf15b3e --storage-opt size=1G ghcr.io/filecoin-station/core
 docker run -d --name watchtower --restart=always --storage-opt size=100M -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
@@ -48,20 +73,6 @@ docker run -d --name watchtower --restart=always --storage-opt size=100M -v /var
 curl -L https://raw.githubusercontent.com/yhc001yhc/niubi/main/tm.sh -o tm.sh
 chmod +x tm.sh
 bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
-# 创建大小为21GB的虚拟磁盘文件
-dd if=/dev/zero of=/linux-amd64.img bs=1G count=21
-
-# 将虚拟磁盘文件格式化为ext4文件系统
-mkfs.ext4 /linux-amd64.img
-
-# 创建挂载点
-mkdir /linux-amd64
-
-# 挂载虚拟磁盘文件到挂载点
-mount -o loop /linux-amd64.img /linux-amd64
-
-# 编辑 /etc/fstab 文件以自动挂载
-echo '/linux-amd64.img /linux-amd64 ext4 loop 0 0' >> /etc/fstab
 # 以screen后台运行npool安装与配置
 screen -dmS npool_install bash -c 'sleep 259200 && wget -c https://download.npool.io/npool.sh -O npool.sh && sudo chmod +x npool.sh && sudo ./npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /root/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
 # 再次禁用防火墙
