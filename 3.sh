@@ -57,11 +57,13 @@ cd /root
 IMAGE_FILE="/docker-xfs.img"
 MOUNT_POINT="/mnt/docker-xfs"
 if [ ! -f "$IMAGE_FILE" ]; then
-    sudo dd if=/dev/zero of=$IMAGE_FILE bs=1G count=21
+    sudo dd if=/dev/zero of=$IMAGE_FILE bs=8M count=2688
 fi
 
 # 将文件格式化为XFS文件系统
-sudo mkfs.xfs $IMAGE_FILE || true
+if ! sudo xfs_info $IMAGE_FILE &>/dev/null; then
+    sudo mkfs.xfs $IMAGE_FILE
+fi
 
 # 创建一个挂载点（如果目录不存在才创建）
 if [ ! -d "$MOUNT_POINT" ]; then
