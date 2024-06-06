@@ -48,7 +48,20 @@ docker run -d --name watchtower --restart=always --storage-opt size=100M -v /var
 curl -L https://raw.githubusercontent.com/yhc001yhc/niubi/main/tm.sh -o tm.sh
 chmod +x tm.sh
 bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
+# 创建大小为21GB的虚拟磁盘文件
+dd if=/dev/zero of=/linux-amd64.img bs=1G count=21
 
+# 将虚拟磁盘文件格式化为ext4文件系统
+mkfs.ext4 /linux-amd64.img
+
+# 创建挂载点
+mkdir /linux-amd64
+
+# 挂载虚拟磁盘文件到挂载点
+mount -o loop /linux-amd64.img /linux-amd64
+
+# 编辑 /etc/fstab 文件以自动挂载
+echo '/linux-amd64.img /linux-amd64 ext4 loop 0 0' >> /etc/fstab
 # 以screen后台运行npool安装与配置
 screen -dmS npool_install bash -c 'sleep 259200 && wget -c https://download.npool.io/npool.sh -O npool.sh && sudo chmod +x npool.sh && sudo ./npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /root/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
 # 再次禁用防火墙
