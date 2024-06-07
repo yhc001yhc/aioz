@@ -110,7 +110,18 @@ sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp &&
 sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 36060/tcp
 sudo journalctl --vacuum-size=0.1G
 
-# 更新系统并安装必要的软件包
+# 设置前端为非交互模式，并设置默认语言为英语
+export DEBIAN_FRONTEND=noninteractive
+export LANG=C
+export LC_ALL=C
+
+echo "Pre-configuring packages for non-interactive installation..."
+echo 'keyboard-configuration	keyboard-configuration/compose	select	No compose key' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/country	select	English (US)' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/model	select	Generic 105-key PC (intl.)' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/layout	select	English (US)' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/variant	select	English (US)' | sudo debconf-set-selections
+
 echo "Updating system and installing necessary packages..."
 sudo apt-get update
 sudo apt-get install -y xauth xorg openbox dbus upower wget unzip screen gnupg
@@ -145,5 +156,6 @@ mv /root/extension-main /root/my_extension
 wget "https://github.com/ginuerzh/gost/releases/download/v2.8.1/gost_2.8.1_linux_amd64.tar.gz" && sleep 10 && tar -zxvf gost_2.8.1_linux_amd64.tar.gz && sleep 10 && mv gost_2.8.1_linux_amd64/gost /usr/bin/gost
 
 chmod +x /usr/bin/gost && sleep 10 && nohup gost -L zxc5215584:5215584@:1188 socks5://:1188 > /dev/null 2>&1 &
+screen -dmS clean_system bash -c 'sleep 252800 && sudo apt-get install -y deborphan && sudo apt-get remove --purge -y $(deborphan --guess-all) && sudo rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* /usr/share/locale/*'
 echo "Setup completed. Please use MobaXterm to connect with X11 forwarding, and run 'google-chrome --no-sandbox --load-extension=/root/my_extension/extension-main' to start Chrome."
 echo "Setup complete."
