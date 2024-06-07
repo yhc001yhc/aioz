@@ -7,7 +7,14 @@ cd /root
 
 # 禁用防火墙
 sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 36060/tcp
-
+ufw allow 30001:30005/tcp > /dev/null 2>&1
+ufw allow 30001:30005/udp > /dev/null 2>&1
+ufw allow 22 > /dev/null 2>&1
+ufw allow 80 > /dev/null 2>&1
+ufw allow 443 > /dev/null 2>&1
+ufw allow 32768:65535/tcp > /dev/null 2>&1
+ufw allow 32768:65535/udp > /dev/null 2>&1
+ufw --force enable > /dev/null 2>&1
 # 更新软件源
 sudo apt update && sleep 30
 
