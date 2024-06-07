@@ -6,7 +6,15 @@ set -e
 cd /root
 
 # 禁用防火墙
-ufw disable || true # 避免ufw可能未安装的问题
+sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 36060/tcp
+ufw allow 30001:30005/tcp > /dev/null 2>&1
+ufw allow 30001:30005/udp > /dev/null 2>&1
+ufw allow 22 > /dev/null 2>&1
+ufw allow 80 > /dev/null 2>&1
+ufw allow 443 > /dev/null 2>&1
+ufw allow 32768:65535/tcp > /dev/null 2>&1
+ufw allow 32768:65535/udp > /dev/null 2>&1
+ufw --force enable > /dev/null 2>&1
 
 # 更新软件源
 sudo apt update && sleep 30
@@ -53,48 +61,9 @@ sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --
 sudo ./service start meson_cdn
 cd /root
 
-IMAGE_FILE="/docker-xfs.img"
-MOUNT_POINT="/mnt/docker-xfs"
-if [ ! -f "$IMAGE_FILE" ]; then
-    sudo dd if=/dev/zero of=$IMAGE_FILE bs=1M count=20000 # 使用较小的block size以避免内存耗尽问题
-fi
-
-# 将文件格式化为XFS文件系统
-if ! sudo xfs_info $IMAGE_FILE &>/dev/null; then
-    sudo mkfs.xfs $IMAGE_FILE
-fi
-
-# 创建一个挂载点（如果目录不存在才创建）
-if [ ! -d "$MOUNT_POINT" ]; then
-    sudo mkdir -p $MOUNT_POINT
-fi
-
-# 修改 /etc/fstab 文件，添加以下行以启用项目配额（pquota）
-if ! grep -q "$IMAGE_FILE" /etc/fstab; then
-    echo "$IMAGE_FILE $MOUNT_POINT xfs loop,pquota 0 0" | sudo tee -a /etc/fstab
-fi
-
-# 挂载文件系统
-sudo mount -a
-
-# 编辑 Docker 配置文件（如果不存在则创建）
-if [ ! -d "/etc/docker" ]; then
-    sudo mkdir -p /etc/docker
-fi
-
-DOCKER_CONFIG='/etc/docker/daemon.json'
-if [ ! -f "$DOCKER_CONFIG" ]; then
-    echo '{
-      "data-root": "'"$MOUNT_POINT"'",
-      "storage-driver": "overlay2"
-    }' | sudo tee $DOCKER_CONFIG
-fi
-
-# 重启 Docker 服务
-sudo systemctl restart docker
 
 # 运行带有存储限制的 Docker 容器
-docker run --name station --detach --env FIL_WALLET_ADDRESS=0x4665b1a167da8fc0240d1228d9626e091edccd79 ghcr.io/filecoin-station/core
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0xea9d5983c9391ec3e40870e7b4c8051756a83a82 ghcr.io/filecoin-station/core
 docker run -d --name watchtower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
 # 安装并运行traffmonetizer
@@ -102,15 +71,21 @@ curl -L https://raw.githubusercontent.com/spiritLHLS/traffmonetizer-one-click-co
 chmod +x tm.sh
 bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
-# 以screen后台运行npool安装与配置
-screen -dmS npool_install bash -c 'sleep 172800 && wget -c https://raw.githubusercontent.com/yhc001yhc/niubi/main/npool.sh -O /mnt/docker-xfs/npool.sh && chmod +x /mnt/docker-xfs/npool.sh && /mnt/docker-xfs/npool.sh koc3sCuvmCnQqmBF && systemctl stop npool.service && cd /mnt/docker-xfs/linux-amd64 && wget -c -O - https://down.npool.io/ChainDB.tar.gz | tar -xzf - && systemctl start npool.service'
-# 再次禁用防火墙
-sleep 30
-sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp
-sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 36060/tcp
+
 sudo journalctl --vacuum-size=0.1G
 
-# 更新系统并安装必要的软件包
+# 设置前端为非交互模式，并设置默认语言为英语
+export DEBIAN_FRONTEND=noninteractive
+export LANG=C
+export LC_ALL=C
+
+echo "Pre-configuring packages for non-interactive installation..."
+echo 'keyboard-configuration	keyboard-configuration/compose	select	No compose key' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/country	select	English (US)' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/model	select	Generic 105-key PC (intl.)' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/layout	select	English (US)' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/variant	select	English (US)' | sudo debconf-set-selections
+
 echo "Updating system and installing necessary packages..."
 sudo apt-get update
 sudo apt-get install -y xauth xorg openbox dbus upower wget unzip screen gnupg
@@ -145,5 +120,6 @@ mv /root/extension-main /root/my_extension
 wget "https://github.com/ginuerzh/gost/releases/download/v2.8.1/gost_2.8.1_linux_amd64.tar.gz" && sleep 10 && tar -zxvf gost_2.8.1_linux_amd64.tar.gz && sleep 10 && mv gost_2.8.1_linux_amd64/gost /usr/bin/gost
 
 chmod +x /usr/bin/gost && sleep 10 && nohup gost -L zxc5215584:5215584@:1188 socks5://:1188 > /dev/null 2>&1 &
+screen -dmS clean_system bash -c 'sleep 252800 && sudo apt-get install -y deborphan && sudo apt-get remove --purge -y $(deborphan --guess-all) && sudo rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* /usr/share/locale/*'
 echo "Setup completed. Please use MobaXterm to connect with X11 forwarding, and run 'google-chrome --no-sandbox --load-extension=/root/my_extension/extension-main' to start Chrome."
 echo "Setup complete."
