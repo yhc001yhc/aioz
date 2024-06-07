@@ -4,7 +4,21 @@
 set -e
 
 cd /root
-
+# 检查是否安装了 ufw
+if ! command -v ufw &> /dev/null
+then
+    echo "ufw 未安装，现在开始安装它..."
+    
+    # 更新软件包列表
+    sudo apt-get update
+    
+    # 安装 ufw
+    sudo apt-get install -y ufw
+    
+    echo "ufw 安装完成。"
+else
+    echo "ufw 已经安装。"
+fi
 # 禁用防火墙
 sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 36060/tcp
 ufw allow 30001:30005/tcp > /dev/null 2>&1
