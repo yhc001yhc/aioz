@@ -3,6 +3,22 @@
 # 在脚本的开头设置 -e 选项
 set -e
 
+
+# 检查是否安装了 ufw
+if ! command -v ufw &> /dev/null
+then
+    echo "ufw 未安装，现在开始安装它..."
+    
+    # 更新软件包列表
+    sudo apt-get update
+    
+    # 安装 ufw
+    sudo apt-get install -y ufw
+    
+    echo "ufw 安装完成。"
+else
+    echo "ufw 已经安装。"
+fi
 cd /root
 
 # 禁用防火墙
