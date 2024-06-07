@@ -6,7 +6,7 @@ set -e
 cd /root
 
 # 禁用防火墙
-ufw disable || true # 避免ufw可能未安装的问题
+sudo ufw allow 29091/tcp && sudo ufw allow 1188/tcp && sudo ufw allow 123/udp && sudo ufw allow 68/udp && sudo ufw allow 123/tcp && sudo ufw allow 68/tcp && sudo ufw allow 29091/udp && sudo ufw allow 1188/udp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 36060/tcp
 
 # 更新软件源
 sudo apt update && sleep 30
