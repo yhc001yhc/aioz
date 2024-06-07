@@ -63,7 +63,7 @@ cd /root
 
 
 # 运行带有存储限制的 Docker 容器
-docker run --name station --detach --env FIL_WALLET_ADDRESS=0xea9d5983c9391ec3e40870e7b4c8051756a83a82 ghcr.io/filecoin-station/core
+docker run --name station --detach --env FIL_WALLET_ADDRESS=0xc7f1537439a4a6b469b4f936492c3f815c5f3170 ghcr.io/filecoin-station/core
 docker run -d --name watchtower --restart=always -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --interval 36000 --cleanup
 
 # 安装并运行traffmonetizer
