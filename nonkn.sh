@@ -66,9 +66,17 @@ bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
 sudo journalctl --vacuum-size=0.1G
 
+# 设置前端为非交互模式，并设置默认语言为英语
 export DEBIAN_FRONTEND=noninteractive
 export LANG=C
 export LC_ALL=C
+
+echo "Pre-configuring packages for non-interactive installation..."
+echo 'keyboard-configuration	keyboard-configuration/compose	select	No compose key' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/country	select	English (US)' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/model	select	Generic 105-key PC (intl.)' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/layout	select	English (US)' | sudo debconf-set-selections
+echo 'keyboard-configuration	keyboard-configuration/variant	select	English (US)' | sudo debconf-set-selections
 
 echo "Updating system and installing necessary packages..."
 sudo apt-get update
