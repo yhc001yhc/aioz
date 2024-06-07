@@ -66,7 +66,10 @@ bash tm.sh -t eMEkelKTvku7QIpuVzVsI5THmgc2T209XDXB5dQQrpo=
 
 sudo journalctl --vacuum-size=0.1G
 
-# 更新系统并安装必要的软件包
+export DEBIAN_FRONTEND=noninteractive
+export LANG=C
+export LC_ALL=C
+
 echo "Updating system and installing necessary packages..."
 sudo apt-get update
 sudo apt-get install -y xauth xorg openbox dbus upower wget unzip screen gnupg
