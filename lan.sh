@@ -24,15 +24,15 @@ echo $KSAPD_PID | sudo tee /sys/fs/cgroup/cpu/kswapd0/tasks
 sudo sh -c 'echo 5000 > /sys/fs/cgroup/cpu/kswapd0/cpu.cfs_quota_us'
 sudo sh -c 'echo 100000 > /sys/fs/cgroup/cpu/kswapd0/cpu.cfs_period_us'
 
+
+# 6. 调整系统 vm.swappiness 参数
+echo "Adjusting vm.swappiness to 10..."
+sudo sysctl vm.swappiness=10
+echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf
 # 5. 限制 Chrome CPU 使用率并启动 Chrome 打开指定网址
 echo "Starting Chrome with optimized settings and restricting CPU usage..."
 cpulimit -e chrome -l 20 &
 
 google-chrome --no-sandbox --disable-plugins --disable-background-timer-throttling --disable-sync --disable-background-networking --disable-site-isolation-trails --disable-default-apps --disable-gpu --single-process --memory-pressure-thresholds=low --enable-low-end-device-mode --load-extension=/root/my_extension --homepage=https://app.lanify.ai/ --new-tab https://app.lanify.ai/
 
-# 6. 调整系统 vm.swappiness 参数
-echo "Adjusting vm.swappiness to 10..."
-sudo sysctl vm.swappiness=10
-echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf
 
-echo "Setup complete! Chrome is now running with optimized settings."
