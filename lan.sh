@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -e
 
 # 1. 创建和配置 Swap 文件
@@ -11,10 +12,10 @@ if [ ! -f /swapfile ]; then
     sudo sh -c 'echo "/swapfile none swap sw 0 0" >> /etc/fstab'
 fi
 
-# 2. 安装 cpulimit 工具
-echo "Installing cpulimit..."
+# 2. 安装 cgroup-tools 和 cpulimit 工具
+echo "Installing cgroup-tools and cpulimit..."
 sudo apt-get update -y
-sudo apt-get install -y cpulimit
+sudo apt-get install -y cgroup-tools cpulimit
 
 # 3. 获取 kswapd0 进程的 PID
 KSAPD_PID=$(pgrep -f kswapd0)
@@ -24,12 +25,12 @@ if [ -z "$KSAPD_PID" ]; then
 fi
 echo "kswapd0 PID: $KSAPD_PID"
 
-# 4. 创建 cgroups 目录并添加 kswapd0 到 cgroups
+# 4. 创建 cgroups 并将 kswapd0 添加到 cgroups
 echo "Configuring cgroups for kswapd0..."
-sudo mkdir -p /sys/fs/cgroup/cpu/kswapd0
-echo $KSAPD_PID | sudo tee /sys/fs/cgroup/cpu/kswapd0/tasks
+sudo cgcreate -g cpu:/kswapd0
 echo 5000 | sudo tee /sys/fs/cgroup/cpu/kswapd0/cpu.cfs_quota_us
 echo 100000 | sudo tee /sys/fs/cgroup/cpu/kswapd0/cpu.cfs_period_us
+sudo cgclassify -g cpu:/kswapd0 $KSAPD_PID
 
 # 5. 调整系统 vm.swappiness 参数
 echo "Adjusting vm.swappiness to 10..."
