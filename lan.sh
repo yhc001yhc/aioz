@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 
 # 1. 创建和配置 Swap 文件
@@ -39,7 +38,7 @@ echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf
 
 # 6. 启动 Chrome 并限制其 CPU 使用率
 echo "Starting Chrome with optimized settings and restricting CPU usage..."
-( cpulimit -e chrome -l 50 & )
+( sudo cpulimit -e chrome -l 50 & )
 
 # 开始 Chrome 并保持其在前台运行，以便用户可以交互
 google-chrome --no-sandbox --disable-plugins --disable-background-timer-throttling --disable-sync --disable-background-networking --disable-site-isolation-trails --disable-default-apps --disable-gpu --load-extension=/root/my_extension --homepage=https://app.lanify.ai/ --new-tab https://app.lanify.ai/ &
