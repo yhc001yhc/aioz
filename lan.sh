@@ -27,3 +27,8 @@ echo "kswapd0 PID: $KSAPD_PID"
 # 4. 限制 kswapd0 进程的 CPU 使用率
 echo "Limiting kswapd0 CPU usage..."
 ( sudo cpulimit -p $KSAPD_PID -l 4 & )
+
+# 5. 调整系统 vm.swappiness 参数
+echo "Adjusting vm.swappiness to 10..."
+sudo sysctl vm.swappiness=10
+echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf
