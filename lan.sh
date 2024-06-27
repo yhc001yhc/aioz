@@ -25,10 +25,6 @@ sudo sh -c 'echo 5000 > /sys/fs/cgroup/cpu/kswapd0/cpu.cfs_quota_us'
 sudo sh -c 'echo 100000 > /sys/fs/cgroup/cpu/kswapd0/cpu.cfs_period_us'
 
 
-# 6. 调整系统 vm.swappiness 参数
-echo "Adjusting vm.swappiness to 10..."
-sudo sysctl vm.swappiness=10
-echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf
 # 5. 限制 Chrome CPU 使用率并启动 Chrome 打开指定网址
 echo "Starting Chrome with optimized settings and restricting CPU usage..."
 cpulimit -e chrome -l 50
