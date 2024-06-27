@@ -25,7 +25,4 @@ sudo sh -c 'echo 5000 > /sys/fs/cgroup/cpu/kswapd0/cpu.cfs_quota_us'
 sudo sh -c 'echo 100000 > /sys/fs/cgroup/cpu/kswapd0/cpu.cfs_period_us'
 
 
-# 5. 限制 Chrome CPU 使用率并启动 Chrome 打开指定网址
-echo "Starting Chrome with optimized settings and restricting CPU usage..."
-cpulimit -e chrome -l 50
 
