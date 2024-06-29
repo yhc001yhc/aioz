@@ -62,18 +62,7 @@ sleep 20
 ./apphub restart
 cd /root
 
-# 下载并安装meson_cdn
-if [ ! -d "./meson_cdn-linux-amd64" ]; then
-    wget 'https://staticassets.meson.network/public/meson_cdn/v3.1.20/meson_cdn-linux-amd64.tar.gz'
-    tar -zxf meson_cdn-linux-amd64.tar.gz
-    rm -f meson_cdn-linux-amd64.tar.gz
-fi
 
-cd ./meson_cdn-linux-amd64
-sudo ./service install meson_cdn
-sudo ./meson_cdn config set --token=uunzqdgkbbefgxprfxsxyymo --https_port=443 --cache.size=30
-sudo ./service start meson_cdn
-cd /root
 
 
 # 运行带有存储限制的 Docker 容器
