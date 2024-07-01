@@ -135,7 +135,7 @@ fi
 
 function install_node() {
     # 默认身份码
-    id="E2F4A2C2-D770-4BCD-80F1-B9B5D5FF4299"
+    id="DA4DFB37-3A41-4700-A6B1-4C3D738A1B8C"
 
     # 默认创建的容器数量
     container_count=1
